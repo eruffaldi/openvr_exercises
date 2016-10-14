@@ -1,6 +1,6 @@
 #pragma once
 #include <openvr.h>
-#include "glew.h"
+#include <GL/glew.h>
 #include <string>
 
 

@@ -12,6 +12,7 @@
 #endif
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string>
 #include <cstdlib>
 #include <memory>
@@ -24,12 +25,13 @@
 #if defined(POSIX)
 #include "unistd.h"
 #endif
-#ifndef WIN32
+#ifndef _WIN32
 #define stricmp strcasecmp
 #define strnicmp strncasecmp
 #define sprintf_s snprintf
-#define vsprintf_s vsnprintf
 #define APIENTRY 
+#else
+#include <windows.h>
 #endif
 
 inline void ThreadSleep( unsigned long nMilliseconds )
@@ -76,17 +78,13 @@ inline void dprintf( const char *fmt, ... )
 	char buffer[ 2048 ];
 
 	va_start( args, fmt );
-#ifndef WIN32
 	vsnprintf(  buffer,sizeof(buffer),fmt,args);
-#else
-	vsprintf_s( buffer, fmt, args );
-#endif
 	va_end( args );
 
 	if ( g_bPrintf )
 		printf( "%s", buffer );
 
-#ifndef WIN32
+#ifndef _WIN32
 	puts(buffer);
 #else
 	OutputDebugStringA( buffer );

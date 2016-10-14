@@ -485,15 +485,7 @@ std::string Path_FindParentSubDirectoryRecursively( const std::string &strStartD
 unsigned char * Path_ReadBinaryFile( const std::string &strFilename, int *pSize )
 {
 	FILE *f;
-#if defined( POSIX ) || defined(APPLE)
 	f = fopen( strFilename.c_str(), "rb" );
-#else
-	errno_t err = fopen_s(&f, strFilename.c_str(), "rb");
-	if ( err != 0 )
-	{
-		f = NULL;
-	}
-#endif
 	
 	unsigned char* buf = NULL;
 
@@ -551,15 +543,7 @@ std::string Path_ReadTextFile( const std::string &strFilename )
 bool Path_WriteStringToTextFile( const std::string &strFilename, const char *pchData )
 {
 	FILE *f;
-#if defined( POSIX ) || defined(APPLE)
 	f = fopen( strFilename.c_str(), "w" );
-#else
-	errno_t err = fopen_s(&f, strFilename.c_str(), "w");
-	if ( err != 0 )
-	{
-		f = NULL;
-	}
-#endif
 	
 	bool ok = false;
 
