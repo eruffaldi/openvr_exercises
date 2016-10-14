@@ -140,7 +140,7 @@ public:
 	bool CreateAllShaders();
 
 	void SetupRenderModelForTrackedDevice( vr::TrackedDeviceIndex_t unTrackedDeviceIndex );
-	CGLRenderModel *FindOrLoadRenderModel( const char *pchRenderModelName );
+	std::shared_ptr<CGLRenderModel> FindOrLoadRenderModel( const char *pchRenderModelName );
 
 protected: 
 	bool m_bDebugOpenGL;
@@ -254,5 +254,5 @@ protected: // OpenGL bookkeeping
 	uint32_t m_nRenderHeight;
 
 	std::vector< std::shared_ptr<CGLRenderModel> > m_vecRenderModels;
-	CGLRenderModel *m_rTrackedDeviceToRenderModel[ vr::k_unMaxTrackedDeviceCount ];
+	CGLRenderModel* m_rTrackedDeviceToRenderModel[ vr::k_unMaxTrackedDeviceCount ];
 };

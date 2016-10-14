@@ -1386,9 +1386,9 @@ void CMainApplication::UpdateHMDMatrixPose()
 //-----------------------------------------------------------------------------
 // Purpose: Finds a render model we've already loaded or loads a new one
 //-----------------------------------------------------------------------------
-CGLRenderModel *CMainApplication::FindOrLoadRenderModel( const char *pchRenderModelName )
+std::shared_ptr<CGLRenderModel>  CMainApplication::FindOrLoadRenderModel( const char *pchRenderModelName )
 {
-	CGLRenderModel *pRenderModel = NULL;
+	std::shared_ptr<CGLRenderModel> pRenderModel;
 	for( auto & x : m_vecRenderModels)
 	{
 		if( !stricmp( x->GetName().c_str(), pchRenderModelName ) )
@@ -1462,7 +1462,7 @@ void CMainApplication::SetupRenderModelForTrackedDevice( vr::TrackedDeviceIndex_
 
 	// try to find a model we've already set up
 	std::string sRenderModelName = GetTrackedDeviceString( m_pHMD, unTrackedDeviceIndex, vr::Prop_RenderModelName_String );
-	CGLRenderModel *pRenderModel = FindOrLoadRenderModel( sRenderModelName.c_str() );
+	auto pRenderModel = FindOrLoadRenderModel( sRenderModelName.c_str() );
 	if( !pRenderModel )
 	{
 		std::string sTrackingSystemName = GetTrackedDeviceString( m_pHMD, unTrackedDeviceIndex, vr::Prop_TrackingSystemName_String );
@@ -1470,7 +1470,7 @@ void CMainApplication::SetupRenderModelForTrackedDevice( vr::TrackedDeviceIndex_
 	}
 	else
 	{
-		m_rTrackedDeviceToRenderModel[ unTrackedDeviceIndex ] = pRenderModel;
+		m_rTrackedDeviceToRenderModel[ unTrackedDeviceIndex ] = pRenderModel.get(); // SPECIAL
 		m_rbShowTrackedDevice[ unTrackedDeviceIndex ] = true;
 	}
 }
@@ -1481,7 +1481,7 @@ void CMainApplication::SetupRenderModelForTrackedDevice( vr::TrackedDeviceIndex_
 //-----------------------------------------------------------------------------
 void CMainApplication::SetupRenderModels()
 {
-	memset( m_rTrackedDeviceToRenderModel, 0, sizeof( m_rTrackedDeviceToRenderModel ) );
+	memset(m_rTrackedDeviceToRenderModel,sizeof(m_rTrackedDeviceToRenderModel),0);
 
 	if( !m_pHMD )
 		return;
