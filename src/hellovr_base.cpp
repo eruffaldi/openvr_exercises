@@ -102,12 +102,14 @@ std::string GetTrackedDeviceString( vr::IVRSystem *pHmd, vr::TrackedDeviceIndex_
 //-----------------------------------------------------------------------------
 bool CMainApplication::BInit()
 {
+#ifdef GLFWMODE
+#else
 	if ( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_TIMER ) < 0 )
 	{
 		printf("%s - SDL could not initialize! SDL Error: %s\n", __FUNCTION__, SDL_GetError());
 		return false;
 	}
-
+#endif
 	// Loading the SteamVR Runtime
 	vr::EVRInitError eError = vr::VRInitError_None;
 	m_pHMD = vr::VR_Init( &eError, vr::VRApplication_Scene );
@@ -117,7 +119,10 @@ bool CMainApplication::BInit()
 		m_pHMD = NULL;
 		char buf[1024];
 		sprintf_s( buf, sizeof( buf ), "Unable to init VR runtime: %s", vr::VR_GetVRInitErrorAsEnglishDescription( eError ) );
+#ifdef GLFWMODE
+#else
 		SDL_ShowSimpleMessageBox( SDL_MESSAGEBOX_ERROR, "VR_Init Failed", buf, NULL );
+#endif
 		return false;
 	}
 
@@ -130,7 +135,10 @@ bool CMainApplication::BInit()
 
 		char buf[1024];
 		sprintf_s( buf, sizeof( buf ), "Unable to get render model interface: %s", vr::VR_GetVRInitErrorAsEnglishDescription( eError ) );
+#ifdef GLFWMODE
+#else
 		SDL_ShowSimpleMessageBox( SDL_MESSAGEBOX_ERROR, "VR_Init Failed", buf, NULL );
+#endif
 		return false;
 	}
 
@@ -138,8 +146,10 @@ bool CMainApplication::BInit()
 	int nWindowPosY = 100;
 	m_nWindowWidth = 1280;
 	m_nWindowHeight = 720;
-	Uint32 unWindowFlags = SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN;
 
+#ifdef GLFWMODE
+#else
+	Uint32 unWindowFlags = SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN;
 	SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 4 );
 	SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 1 );
 	//SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY );
@@ -163,6 +173,7 @@ bool CMainApplication::BInit()
 		printf( "%s - OpenGL context could not be created! SDL Error: %s\n", __FUNCTION__, SDL_GetError() );
 		return false;
 	}
+#endif
 
 	glewExperimental = GL_TRUE;
 	GLenum nGlewError = glewInit();
@@ -173,12 +184,14 @@ bool CMainApplication::BInit()
 	}
 	glGetError(); // to clear the error caused deep in GLEW
 
+#ifdef GLFWMODE
+#else
 	if ( SDL_GL_SetSwapInterval( m_bVblank ? 1 : 0 ) < 0 )
 	{
 		printf( "%s - Warning: Unable to set VSync! SDL Error: %s\n", __FUNCTION__, SDL_GetError() );
 		return false;
 	}
-
+#endif
 
 	m_strDriver = "No Driver";
 	m_strDisplay = "No Display";
@@ -187,8 +200,9 @@ bool CMainApplication::BInit()
 	m_strDisplay = GetTrackedDeviceString( m_pHMD, vr::k_unTrackedDeviceIndex_Hmd, vr::Prop_SerialNumber_String );
 
 	std::string strWindowTitle = "hellovr_sdl - " + m_strDriver + " " + m_strDisplay;
+#ifndef GLFWMODE
 	SDL_SetWindowTitle( m_pWindow, strWindowTitle.c_str() );
-	
+#endif
 	// cube array
  	m_iSceneVolumeWidth = m_iSceneVolumeInit;
  	m_iSceneVolumeHeight = m_iSceneVolumeInit;
@@ -343,6 +357,8 @@ void CMainApplication::Shutdown()
 		}
 	}
 
+#ifdef GLFWMODE
+#else
 	if( m_pWindow )
 	{
 		SDL_DestroyWindow(m_pWindow);
@@ -350,6 +366,7 @@ void CMainApplication::Shutdown()
 	}
 
 	SDL_Quit();
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -357,8 +374,10 @@ void CMainApplication::Shutdown()
 //-----------------------------------------------------------------------------
 bool CMainApplication::HandleInput()
 {
-	SDL_Event sdlEvent;
 	bool bRet = false;
+#ifdef GLFWMODE
+#else
+	SDL_Event sdlEvent;
 
 	while ( SDL_PollEvent( &sdlEvent ) != 0 )
 	{
@@ -379,7 +398,7 @@ bool CMainApplication::HandleInput()
 			}
 		}
 	}
-
+#endif
 	// Process SteamVR events
 	vr::VREvent_t event;
 	while( m_pHMD->PollNextEvent( &event, sizeof( event ) ) )
@@ -407,6 +426,14 @@ void CMainApplication::RunMainLoop()
 {
 	bool bQuit = false;
 
+#ifdef GLFWMODE
+	while ( !bQuit )
+	{
+		bQuit = HandleInput();
+
+		RenderFrame();
+	}	
+#else
 	SDL_StartTextInput();
 	SDL_ShowCursor( SDL_DISABLE );
 
@@ -418,6 +445,7 @@ void CMainApplication::RunMainLoop()
 	}
 
 	SDL_StopTextInput();
+#endif
 }
 
 
@@ -475,11 +503,13 @@ void CMainApplication::RenderFrame()
 		glFinish();
 	}
 
+#ifdef GLFWMODE
+#else
 	// SwapWindow
 	{
 		SDL_GL_SwapWindow( m_pWindow );
 	}
-
+#endif
 	// Clear
 	{
 		// We want to make sure the glFinish waits for the entire present to complete, not just the submission

@@ -1,9 +1,16 @@
 #pragma once
 #include "hellovr_model.h"
 #include <openvr.h>
+
+#ifdef GLFWMODE
+#include <GLFW/glfw3.h>
+#include <GL/glew.h>
+#else
 #include <SDL.h>
 #include <GL/glew.h>
 #include <SDL_opengl.h>
+#endif
+
 #include <stdio.h>
 #include <string>
 #include <cstdlib>
@@ -150,11 +157,17 @@ protected:
 	bool m_rbShowTrackedDevice[ vr::k_unMaxTrackedDeviceCount ];
 
 protected: // SDL bookkeeping
+#ifdef GLFWMODE
+	void *m_pWindow;
+	int m_pContext;
+#else
 	SDL_Window *m_pWindow;
+	SDL_GLContext m_pContext;
+#endif
+
 	uint32_t m_nWindowWidth;
 	uint32_t m_nWindowHeight;
 
-	SDL_GLContext m_pContext;
 
 protected: // OpenGL bookkeeping
 	int m_iTrackedControllerCount;

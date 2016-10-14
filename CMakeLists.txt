@@ -1,7 +1,19 @@
 set(OPENVR ${PROJECT_SOURCE_DIR}/openvr)
 include_directories(${OPENVR}/headers)
-find_package(cmakego COMPONENTS glew sdl2 REQUIRED)
+find_package(cmakego COMPONENTS glew REQUIRED)
 add_definitions(--std=c++11)
+
+option(GLFWMODE "use glfw instead of sdl" OFF)
+
+if(GLFWMODE)
+find_package(cmakego COMPONENTS glfw REQUIRED)
+set(EXTRALIB p::glfw)
+add_definitions(-DGLFWMODE)
+else()
+find_package(cmakego COMPONENTS sdl2 REQUIRED)
+set(EXTRALIB p::sdl2)
+endif()
+
 if(APPLE)
 set(OPENVR_OS osx32)
 add_definitions(-DOSX -DAPPLE)
@@ -23,4 +35,4 @@ include_directories(${OPENVR}/samples)
 include_directories(include)
 
 add_executable(hellovr_opengl src/hellovr_opengl_main.cpp src/hellovr_model.cpp src/hellovr_base.cpp ${EXTRASRC} ${OPENVR}/samples/shared/lodepng.cpp ${OPENVR}/samples/shared/Matrices.cpp src/pathtools.cpp)
-target_link_libraries(hellovr_opengl p::glew p::sdl2)
+target_link_libraries(hellovr_opengl p::glew ${EXTRALIB})

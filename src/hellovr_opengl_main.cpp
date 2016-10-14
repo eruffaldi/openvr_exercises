@@ -2,9 +2,6 @@
 
 
 //#include <gl/glu.h>
-#include <stdio.h>
-#include <string>
-#include <cstdlib>
 #include "hellovr_base.h"
 #include "hellovr_model.h"
 
