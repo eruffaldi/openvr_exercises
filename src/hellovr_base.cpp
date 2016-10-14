@@ -103,6 +103,8 @@ std::string GetTrackedDeviceString( vr::IVRSystem *pHmd, vr::TrackedDeviceIndex_
 bool CMainApplication::BInit()
 {
 #ifdef GLFWMODE
+	printf("%s - GFLW could not initialize!");
+	return false;
 #else
 	if ( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_TIMER ) < 0 )
 	{
@@ -300,10 +302,6 @@ void CMainApplication::Shutdown()
 		m_pHMD = NULL;
 	}
 
-	for( std::vector< CGLRenderModel * >::iterator i = m_vecRenderModels.begin(); i != m_vecRenderModels.end(); i++ )
-	{
-		delete (*i);
-	}
 	m_vecRenderModels.clear();
 	
 	if( m_pContext )
@@ -1391,11 +1389,11 @@ void CMainApplication::UpdateHMDMatrixPose()
 CGLRenderModel *CMainApplication::FindOrLoadRenderModel( const char *pchRenderModelName )
 {
 	CGLRenderModel *pRenderModel = NULL;
-	for( std::vector< CGLRenderModel * >::iterator i = m_vecRenderModels.begin(); i != m_vecRenderModels.end(); i++ )
+	for( auto & x : m_vecRenderModels)
 	{
-		if( !stricmp( (*i)->GetName().c_str(), pchRenderModelName ) )
+		if( !stricmp( x->GetName().c_str(), pchRenderModelName ) )
 		{
-			pRenderModel = *i;
+			pRenderModel = x;
 			break;
 		}
 	}
@@ -1437,12 +1435,11 @@ CGLRenderModel *CMainApplication::FindOrLoadRenderModel( const char *pchRenderMo
 			return NULL; // move on to the next tracked device
 		}
 
-		pRenderModel = new CGLRenderModel( pchRenderModelName );
+		pRenderModel = std::make_shared<CGLRenderModel>( pchRenderModelName );
 		if ( !pRenderModel->BInit( *pModel, *pTexture ) )
 		{
 			dprintf( "Unable to create GL model from render model %s\n", pchRenderModelName );
-			delete pRenderModel;
-			pRenderModel = NULL;
+			pRenderModel.reset();
 		}
 		else
 		{

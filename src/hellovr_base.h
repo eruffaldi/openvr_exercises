@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <string>
 #include <cstdlib>
+#include <memory>
 
 #include "shared/lodepng.h"
 #include "shared/Matrices.h"
@@ -252,6 +253,6 @@ protected: // OpenGL bookkeeping
 	uint32_t m_nRenderWidth;
 	uint32_t m_nRenderHeight;
 
-	std::vector< CGLRenderModel * > m_vecRenderModels;
+	std::vector< std::shared_ptr<CGLRenderModel> > m_vecRenderModels;
 	CGLRenderModel *m_rTrackedDeviceToRenderModel[ vr::k_unMaxTrackedDeviceCount ];
 };
