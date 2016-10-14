@@ -77,7 +77,7 @@ void CMainApplicationMain::RenderScene( vr::Hmd_Eye nEye )
 		const Matrix4 & matDeviceToTracking = m_rmat4DevicePose[ unTrackedDevice ];
 		Matrix4 matMVP = GetCurrentViewProjectionMatrix( nEye ) * matDeviceToTracking;
 		glUniformMatrix4fv( m_nRenderModelMatrixLocation, 1, GL_FALSE, matMVP.get() );
-
+			
 		m_rTrackedDeviceToRenderModel[ unTrackedDevice ]->Draw();
 	}
 
