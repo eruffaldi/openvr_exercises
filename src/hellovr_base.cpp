@@ -1393,8 +1393,7 @@ std::shared_ptr<CGLRenderModel>  CMainApplication::FindOrLoadRenderModel( const 
 	{
 		if( !stricmp( x->GetName().c_str(), pchRenderModelName ) )
 		{
-			pRenderModel = x;
-			break;
+			return x;
 		}
 	}
 
@@ -1481,7 +1480,7 @@ void CMainApplication::SetupRenderModelForTrackedDevice( vr::TrackedDeviceIndex_
 //-----------------------------------------------------------------------------
 void CMainApplication::SetupRenderModels()
 {
-	memset(m_rTrackedDeviceToRenderModel,sizeof(m_rTrackedDeviceToRenderModel),0);
+	memset(m_rTrackedDeviceToRenderModel,0,sizeof(m_rTrackedDeviceToRenderModel));
 
 	if( !m_pHMD )
 		return;
