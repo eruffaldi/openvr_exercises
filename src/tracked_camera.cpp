@@ -39,10 +39,10 @@ public:
 	void StopCapture();
 	bool UpdateImage();
 	bool pollVRforButton();
+	void UpdateHMD();
 
     vr::IVRSystem					*m_pVRSystem;
     vr::IVRTrackedCamera			*m_pVRTrackedCamera;
-
     vr::TrackedCameraHandle_t	m_hTrackedCamera;
 
     uint32_t				m_nCameraFrameWidth;
@@ -50,19 +50,61 @@ public:
     uint32_t				m_nCameraFrameBufferSize;
     uint8_t					*m_pCameraFrameBuffer;
     vr::CameraVideoStreamFrameHeader_t m_frameHeader;
-
     std::string m_HMDSerialNumberString;
-
     uint32_t				m_nLastFrameSequence;
 
-    Matrix4        m_cam2head;
+    /// SDL Part
+
     SDL_Surface * m_surface = 0;
 	SDL_Rect m_texr;
 	SDL_Texture * m_tex = 0;
 	SDL_Renderer * m_renderer =0;
 
+	/// Tracking Part
 
+	vr::TrackedDevicePose_t m_rTrackedDevicePose[ vr::k_unMaxTrackedDeviceCount ];
+	Matrix4 m_rmat4DevicePose[ vr::k_unMaxTrackedDeviceCount ];
+	int m_iValidPoseCount =0;
+	std::string m_strPoseClasses;
+	char m_rDevClassChar[ vr::k_unMaxTrackedDeviceCount ];   // for each device, a character representing its class
+
+    Matrix4        m_cam2head;
+    Matrix4 	   m_hmdpose;
 };
+
+void TrackingOnly::UpdateHMD()
+{
+	vr::VRCompositor()->WaitGetPoses(m_rTrackedDevicePose, vr::k_unMaxTrackedDeviceCount, NULL, 0 );
+
+	m_iValidPoseCount = 0;
+	m_strPoseClasses = "";
+	for ( int nDevice = 0; nDevice < vr::k_unMaxTrackedDeviceCount; ++nDevice )
+	{
+		if ( m_rTrackedDevicePose[nDevice].bPoseIsValid )
+		{
+			m_iValidPoseCount++;
+			m_rmat4DevicePose[nDevice] = convert( m_rTrackedDevicePose[nDevice].mDeviceToAbsoluteTracking );
+			if (m_rDevClassChar[nDevice]==0)
+			{
+				switch (m_pVRSystem->GetTrackedDeviceClass(nDevice))
+				{
+				case vr::TrackedDeviceClass_Controller:        m_rDevClassChar[nDevice] = 'C'; break;
+				case vr::TrackedDeviceClass_HMD:               m_rDevClassChar[nDevice] = 'H'; break;
+				case vr::TrackedDeviceClass_Invalid:           m_rDevClassChar[nDevice] = 'I'; break;
+				case vr::TrackedDeviceClass_Other:             m_rDevClassChar[nDevice] = 'O'; break;
+				case vr::TrackedDeviceClass_TrackingReference: m_rDevClassChar[nDevice] = 'T'; break;
+				default:                                       m_rDevClassChar[nDevice] = '?'; break;
+				}
+			}
+			m_strPoseClasses += m_rDevClassChar[nDevice];
+		}
+	}
+
+	if ( m_rTrackedDevicePose[vr::k_unTrackedDeviceIndex_Hmd].bPoseIsValid )
+	{
+		m_hmdpose = m_rmat4DevicePose[vr::k_unTrackedDeviceIndex_Hmd].invert();
+	}
+}
 
 bool TrackingOnly::pollVRforButton()
 {
@@ -72,7 +114,7 @@ bool TrackingOnly::pollVRforButton()
 	while( m_pVRSystem->PollNextEvent( &event, sizeof( event ) ) )
 	{
 		//ProcessVREvent( event );
-		
+
 	}
 
 	// Process SteamVR controller state
@@ -82,8 +124,10 @@ bool TrackingOnly::pollVRforButton()
 		if( m_pVRSystem->GetControllerState( unDevice, &state ) )
 		{
 			if(state.ulButtonPressed)
+			{
 				r = true;
-			break;
+				break;
+			}
 		}
 	}
 	return r;
@@ -303,28 +347,34 @@ int main(int argc, char * argv[])
 		{
 			switch(sdlEvent.type)
 			{
-			case SDL_QUIT :
-			{
-				bQuit = true;
-				break;
-			}
-			case SDL_KEYDOWN:
-			{
-				if ( sdlEvent.key.keysym.sym == SDLK_ESCAPE 
-				     || sdlEvent.key.keysym.sym == SDLK_q )
+				case SDL_QUIT :
 				{
+					bQuit = true;
 					break;
 				}
-				if( sdlEvent.key.keysym.sym == SDLK_c )
+				case SDL_KEYDOWN:
 				{
+					if ( sdlEvent.key.keysym.sym == SDLK_ESCAPE 
+					     || sdlEvent.key.keysym.sym == SDLK_q )
+					{
+						break;
+					}
+					if( sdlEvent.key.keysym.sym == SDLK_c )
+					{
+					}
+					break;
 				}
-				break;
-			}
-			case SDL_USEREVENT:
-			{
-				vr.UpdateImage();
-				break;
-			}
+				case SDL_USEREVENT:
+				{
+					vr.UpdateHMD();
+					vr.UpdateImage();
+
+					// and THEN use:
+					// 		camera2head: vr.m_cam2head for 
+					//		eye2head:    convert(vr.m_pVRSystem->GetEyeToHeadTransform( Eye_Left/Eye_Right ))
+					//		head2origin: vr.m_hmdpose
+					break;
+				}
 			}
 		}
 
