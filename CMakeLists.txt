@@ -5,12 +5,13 @@ add_definitions(--std=c++11)
 
 option(GLFWMODE "use glfw instead of sdl" OFF)
 
+find_package(cmakego COMPONENTS sdl2 REQUIRED)
+
 if(GLFWMODE)
 find_package(cmakego COMPONENTS glfw REQUIRED)
 set(EXTRALIB p::glfw)
 add_definitions(-DGLFWMODE)
 else()
-find_package(cmakego COMPONENTS sdl2 REQUIRED)
 set(EXTRALIB p::sdl2)
 endif()
 
@@ -36,3 +37,6 @@ include_directories(include)
 
 add_executable(hellovr_opengl src/hellovr_opengl_main.cpp src/hellovr_model.cpp src/hellovr_base.cpp ${EXTRASRC} ${OPENVR}/samples/shared/lodepng.cpp ${OPENVR}/samples/shared/Matrices.cpp src/pathtools.cpp)
 target_link_libraries(hellovr_opengl p::glew ${EXTRALIB})
+
+add_executable(tracked_camera src/tracked_camera.cpp src/lodepng.cpp ${OPENVR}/samples/shared/Matrices.cpp )
+target_link_libraries(tracked_camera p::glew p::sdl2)
