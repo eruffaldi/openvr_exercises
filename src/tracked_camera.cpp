@@ -47,8 +47,8 @@ public:
 
     uint32_t				m_nCameraFrameWidth;
     uint32_t				m_nCameraFrameHeight;
-    uint32_t				m_nCameraFrameBufferSize;
-    uint8_t					*m_pCameraFrameBuffer;
+    uint32_t				m_nCameraFrameBufferSize = 0;
+    uint8_t					*m_pCameraFrameBuffer=0;
     vr::CameraVideoStreamFrameHeader_t m_frameHeader;
     std::string m_HMDSerialNumberString;
     uint32_t				m_nLastFrameSequence;
@@ -135,6 +135,11 @@ bool TrackingOnly::pollVRforButton()
 
 bool TrackingOnly::StartCapture()
 {
+    if(!m_renderer)
+    {
+        LogMessage("Invalid Renderer");
+        return false;
+    }
 
     // Allocate for camera frame buffer requirements
     uint32_t nCameraFrameBufferSize = 0;
@@ -147,14 +152,32 @@ bool TrackingOnly::StartCapture()
     // used for saving image NOT for showing
     m_surface = SDL_CreateRGBSurface(SDL_SWSURFACE, m_nCameraFrameWidth, m_nCameraFrameHeight, 32,
                                    0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
+    if(!m_surface)
 
-    m_tex = SDL_CreateTexture(m_renderer,SDL_PIXELFORMAT_RGBA8888,SDL_TEXTUREACCESS_STREAMING,m_nCameraFrameWidth,m_nCameraFrameHeight);
-	{
+    {
+        LogMessage(  "SDL_CreateRGBSurface FAIL\n" );
+        return false;
+
+    }
+    LogMessage(  "SDL_CreateRGBSurface %d %d OK\n",m_nCameraFrameWidth,m_nCameraFrameHeight );
+
+    m_tex = SDL_CreateTexture(m_renderer,SDL_PIXELFORMAT_ABGR8888,SDL_TEXTUREACCESS_STREAMING,m_nCameraFrameWidth,m_nCameraFrameHeight);
+    if(!m_tex)
+         {
+        LogMessage(  "SDL_CreateTexture FAIL\n" );
+        return false;
+
+    }
+    LogMessage(  "SDL_CreateTexture OK\n" );
+        {
 		int w,h;
-		SDL_QueryTexture(m_tex,0,0,&w,&h);
+                SDL_QueryTexture(m_tex,0,0,&w,&h);
 		SDL_Rect texr; texr.x = 0; texr.y = 0; texr.w = w; texr.h = h; 
 		m_texr = texr;
 	}
+
+    LogMessage(  "SDL_QueryTexture OK\n" );
+
 
     if ( nCameraFrameBufferSize && nCameraFrameBufferSize != m_nCameraFrameBufferSize )
     {
@@ -163,6 +186,7 @@ bool TrackingOnly::StartCapture()
         m_pCameraFrameBuffer = new uint8_t[m_nCameraFrameBufferSize];
         memset( m_pCameraFrameBuffer, 0, m_nCameraFrameBufferSize );
     }
+    LogMessage("Buffer Inited\n");
 
     m_nLastFrameSequence = 0;
 
@@ -197,9 +221,12 @@ bool TrackingOnly::UpdateImage()
     m_nLastFrameSequence = m_frameHeader.nFrameSequence;
 
     // this is needed ONLY for saving png
-    SDL_LockSurface(m_surface);
-    memcpy(m_surface,m_pCameraFrameBuffer,m_nCameraFrameWidth*m_nCameraFrameHeight*4);
-    SDL_UnlockSurface(m_surface);
+    if(false)
+    {
+            SDL_LockSurface(m_surface);
+        memcpy(m_surface,m_pCameraFrameBuffer,m_nCameraFrameWidth*m_nCameraFrameHeight*4);
+        SDL_UnlockSurface(m_surface);
+    }
     SDL_UpdateTexture(m_tex,0,m_pCameraFrameBuffer,m_nCameraFrameWidth*4);
     return true;
 }
@@ -257,6 +284,7 @@ bool TrackingOnly::InitOpenVR(SDL_Renderer *r)
         LogMessage(  "Unable to get Tracked Camera interface.\n" );
         return false;
     }
+    LogMessage(  "m_pVRTrackedCamera OK\n" );
 
     bool bHasCamera = false;
     vr::EVRTrackedCameraError nCameraError = m_pVRTrackedCamera->HasCamera( vr::k_unTrackedDeviceIndex_Hmd, &bHasCamera );
@@ -265,6 +293,7 @@ bool TrackingOnly::InitOpenVR(SDL_Renderer *r)
         LogMessage(  "No Tracked Camera Available! (%s)\n", m_pVRTrackedCamera->GetCameraErrorNameFromEnum( nCameraError ) );
         return false;
     }
+    LogMessage(  "bHasCamera OK\n" );
 
     // Accessing the FW description is just a further check to ensure camera communication is valid as expected.
     vr::ETrackedPropertyError propertyError;
@@ -312,7 +341,11 @@ int main(int argc, char * argv[])
 	auto w = SDL_CreateWindow( "tracked", 0,0,WIDTH,HEIGHT,SDL_WINDOW_SHOWN);
 	SDL_SetWindowTitle( w, "tracked");
 	auto renderer = SDL_CreateRenderer(w, -1, SDL_RENDERER_ACCELERATED);
-
+        if(!renderer)
+             {
+            LogMessage("Main Cannot Create Renderer\n");
+            return -1;
+        }
 
 	// Prop_CameraToHeadTransform_Matrix34 for TrackedDeviceClass_HMD
 	// Prop_StatusDisplayTransform_Matrix34 for ETrackedDeviceProperty
@@ -326,16 +359,18 @@ int main(int argc, char * argv[])
 
 	if(!vr.InitOpenVR(renderer))
 		return false;
-	if(!vr.StartCapture())
+        fprintf(stderr,"InitOpenVR\n");
+        if(!vr.StartCapture())
 		return false;
-
+        fprintf(stderr,"StartCapture\n");
 
 	bool bQuit = false;
-	SDL_TimerID my_timer_id = SDL_AddTimer((33 / 10) * 10, my_callbackfunc, (void*)SDL_USEREVENT);
+        SDL_TimerID my_timer_id = SDL_AddTimer((18 / 10) * 10, my_callbackfunc, (void*)SDL_USEREVENT);
 
 
 	bool lastpressed = false;
-	while(!bQuit)
+        fprintf(stderr,"Ready! Go!\n");
+        while(!bQuit)
 	{
 		// check timeout => update image
 		SDL_RenderClear(renderer);
@@ -367,7 +402,7 @@ int main(int argc, char * argv[])
 				case SDL_USEREVENT:
 				{
 					vr.UpdateHMD();
-					vr.UpdateImage();
+                                        vr.UpdateImage();
 
 					// and THEN use:
 					// 		camera2head: vr.m_cam2head for 

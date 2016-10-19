@@ -1,7 +1,10 @@
 set(OPENVR ${PROJECT_SOURCE_DIR}/openvr)
 include_directories(${OPENVR}/headers)
 find_package(cmakego COMPONENTS glew REQUIRED)
+if(CMAKE_COMPILER_IS_GNUCXX)
 add_definitions(--std=c++11)
+else()
+endif()
 
 option(GLFWMODE "use glfw instead of sdl" OFF)
 
